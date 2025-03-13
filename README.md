@@ -3,7 +3,7 @@
 
 ## This Repo contains the Final Project Assignment for DSCI-D590 Group 3
 
-Group 3 Contributors:
+Contributors:
 - Nicholas Antoine
 - Marcos Fernandez
 - Tyler Frazer
