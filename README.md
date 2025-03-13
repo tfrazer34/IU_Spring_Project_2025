@@ -1,7 +1,7 @@
 # DSCI-D590-Time Series
 <br>
 
-## This Repo contains the Final Project Assignment for DSCI-D590 Group 3
+## This Repo contains the Final Project Assignment for DSCI-D590
 
 Contributors:
 - Nicholas Antoine
