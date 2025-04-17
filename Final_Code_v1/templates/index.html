@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intuit Stock Prediction Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* General Dashboard Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: #f4f6f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding-top: 20px;
+        }
+        .dashboard-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 90%;
+            max-width: 1200px;
+            margin-bottom: 20px;
+        }
+        .dashboard-header {
+            background-color: #007bff;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .dashboard-header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+        .dashboard-content {
+            padding: 30px;
+        }
+
+        /* Tab Styles */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .tab-button.active {
+            background-color: #e9ecef;
+        }
+        .tab-button:hover {
+            background-color: #dee2e6;
+        }
+        .tab-content {
+            display: none;
+            margin-top: 20px;
+        }
+        .tab-content.active {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            flex-direction: row; /* Explicitly set row direction */
+            justify-content: flex-start; /* Ensure left alignment */
+        }
+
+        /* Raw Data Tab Styles */
+        #raw-data-table-container {
+            flex: 1 1 50%;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-height: 500px;
+            margin-top: 30px; /* Add margin to the top of the table container */
+        }
+        .data {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data th {
+            background-color: #f2f2f2;
+            color: #333;
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid #ccc;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .data td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .data tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #raw-data-chart-container {
+            flex: 1 1 50%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column; /* Stack title and image vertically */
+            justify-content: flex-start; /* Align items to the top */
+            align-items: center; /* Center horizontally */
+            min-height: 300px;
+        }
+        #raw-data-chart-container h2 {
+            margin-bottom: 10px; /* Reduce space below the title */
+            text-align: center; /* Center the title */
+        }
+        #raw-data-chart-container img {
+            max-width: 95%;
+            max-height: 95%;
+            height: auto;
+        }
+
+        /* Prediction Tab Styles */
+        #prediction {
+            flex-direction: column;
+        }
+        #prediction-form-container {
+            margin-bottom: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 80px;
+        }
+        .submit-button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+        .prediction-list {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .prediction-list h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .prediction-list p {
+            margin: 5px 0;
+            color: #495057;
+        }
+
+        #prediction-chart-container {
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            display: flex;
+            justify-content: flex-end; /* Align chart to the right */
+            align-items: center;
+            margin-top: 20px;
+        }
+        #prediction-chart-container img {
+            max-width: 95%;
+            height: auto;
+        }
+
+        /* Footer Styles */
+        .dashboard-footer {
+            background-color: #343a40;
+            color: #fff;
+            text-align: center;
+            padding: 15px;
+            border-top: 1px solid #555;
+            font-size: 0.9em;
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+        }
+        .dashboard-footer p {
+            margin: 5px 0;
+        }
+        .disclaimer {
+            font-size: 0.8em;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Intuit Stock Prediction Dashboard</h1>
+        </header>
+
+        <main class="dashboard-content">
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab('raw-data', event)">Raw Data</button>
+                <button class="tab-button" onclick="openTab('prediction', event)">Prediction</button>
+            </div>
+
+            <div id="raw-data" class="tab-content active">
+                <div id="raw-data-table-container">
+                    <h2>Historical Stock Data (Last 3 Years)</h2>
+                    {% if raw_data %}
+                        {{ raw_data|safe }}
+                    {% else %}
+                        <p>Could not retrieve historical stock data.</p>
+                    {% endif %}
+                </div>
+                <div id="raw-data-chart-container">
+                    <h2>Historical Stock Price Chart</h2>
+                    {% if historical_graph_url %}
+                        <img src="{{ historical_graph_url }}" alt="Historical Stock Price Chart">
+                    {% else %}
+                        <p>Could not generate historical stock price chart.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="prediction" class="tab-content">
+                <div id="prediction-form-container">
+                    <h2>Predict Future Stock Price</h2>
+                    <form method="POST" action="/predict" id="prediction-form">
+                        <div class="form-group">
+                            <label for="days">Days to Predict:</label>
+                            <input type="number" id="days" name="days" value="30" min="1" max="365">
+                        </div>
+                        <button type="submit" class="submit-button">Predict</button>
+                    </form>
+                </div>
+
+                {% if predictions or model_error %}
+                    <div id="prediction-chart-container">
+                        <h2>Historical and Predicted Stock Price Chart</h2>
+                        {% if predicted_graph_url %}
+                            <img src="{{ predicted_graph_url }}" alt="Stock Price Chart with Predictions">
+                        {% else %}
+                            <p>Could not generate stock price chart with predictions.</p>
+                        {% endif %}
+                    </div>
+                    <div class="prediction-list">
+                        <h2>Predicted Stock Prices</h2>
+                        {% for item in predictions %}
+                            <p><strong>{{ item.date }}:</strong> ${{ item.price }}</p>
+                        {% endfor %}
+                    </div>
+                {% elif model_error %}
+                    <div class="error-message">Error: {{ model_error }}</div>
+                {% endif %}
+            </div>
+        </main>
+
+        <footer class="dashboard-footer">
+            <p>&copy; {{ current_year }} Your Company/Project Name</p>
+            <p class="disclaimer">Note: This is a simple linear regression model and its predictions should not be used for financial decisions. Stock prices are highly volatile and influenced by many factors.</p>
+        </footer>
+    </div>
+
+    <script>
+        function openTab(tabId, evt) {
+            var i;
+            var tabContent = document.getElementsByClassName("tab-content");
+            var tabButtons = document.getElementsByClassName("tab-button");
+            for (i = 0; i < tabContent.length; i++) {
+                tabContent[i].style.display = "none";
+            }
+            for (i = 0; i < tabButtons.length; i++) {
+                tabButtons[i].classList.remove("active");
+            }
+            document.getElementById(tabId).style.display = "flex";
+            evt.currentTarget.classList.add("active");
+            localStorage.setItem('activeTab', tabId); // Store active tab in local storage
+        }
+
+        // Initialize active tab on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const activeTab = localStorage.getItem('activeTab') || 'raw-data'; // Get active tab from storage or default to 'raw-data'
+            openTab(activeTab, document.querySelector(`.tab-button[onclick*="${activeTab}"]`));
+        });
+    </script>
+</body>
+</html>
