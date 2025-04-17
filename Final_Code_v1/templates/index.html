@@ -220,7 +220,7 @@
             font-size: 0.8em;
             color: #ccc;
         }
-    </style>
+</style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -230,11 +230,11 @@
 
         <main class="dashboard-content">
             <div class="tabs">
-                <button class="tab-button active" onclick="openTab('raw-data', event)">Raw Data</button>
+                <button class="tab-button" onclick="openTab('raw-data', event)">Raw Data</button>
                 <button class="tab-button" onclick="openTab('prediction', event)">Prediction</button>
             </div>
 
-            <div id="raw-data" class="tab-content active">
+            <div id="raw-data" class="tab-content">
                 <div id="raw-data-table-container">
                     <h2>Historical Stock Data (Last 3 Years)</h2>
                     {% if raw_data %}
@@ -305,12 +305,16 @@
             }
             document.getElementById(tabId).style.display = "flex";
             evt.currentTarget.classList.add("active");
-            localStorage.setItem('activeTab', tabId); // Store active tab in local storage
+            localStorage.setItem('activeTab', tabId);
         }
 
         // Initialize active tab on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const activeTab = localStorage.getItem('activeTab') || 'raw-data'; // Get active tab from storage or default to 'raw-data'
+            let activeTab = localStorage.getItem('activeTab');
+            if (!activeTab) {
+                activeTab = 'raw-data'; // Default to raw-data
+                localStorage.setItem('activeTab', activeTab); // Ensure it's set
+            }
             openTab(activeTab, document.querySelector(`.tab-button[onclick*="${activeTab}"]`));
         });
     </script>
