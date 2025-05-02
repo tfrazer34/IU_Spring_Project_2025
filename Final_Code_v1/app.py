@@ -12,10 +12,11 @@ matplotlib.use('Agg')  # Force Matplotlib to use the 'Agg' backend
 import matplotlib.pyplot as plt
 import os  # For file operations
 import uuid  # For generating unique filenames
+import shutil
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key"  # **Important!** Set a strong secret key
-app.config['IMAGE_FOLDER'] = 'static/images'  # Folder to store images
+app.config['IMAGE_FOLDER'] = os.path.join('.', os.path.join('static', 'images'))  # Folder to store images
 os.makedirs(app.config['IMAGE_FOLDER'], exist_ok=True)  # Create the folder if it doesn't exist
 
 # --- Stock Data Fetching and Model Training (Global Scope) ---
@@ -43,15 +44,17 @@ if not data.empty:
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
         # Generate a unique filename
-        historical_graph_filename = f"{uuid.uuid4()}_historical.png"  # Unique filename for historical graph
-        filepath = os.path.join(app.config['IMAGE_FOLDER'], historical_graph_filename)
-        plt.savefig(filepath, format='png')
+        historical_graph_filename = f"historical.png"  # Unique filename for historical graph
+        #filepath = os.path.join(app.config['IMAGE_FOLDER'], historical_graph_filename)
+        plt.savefig(historical_graph_filename, format='png')
         plt.close()
+        filepath = os.path.join(app.config['IMAGE_FOLDER'], historical_graph_filename)
+        shutil.move(historical_graph_filename, filepath)
         return historical_graph_filename  # Return the filename
 
     def create_prediction_graph(dates, prices, predicted_dates, predicted_prices, ma30):
         """Creates a line graph for historical and predicted stock data, including the 30-day MA, and saves it to a file."""
-        filename = f"{uuid.uuid4()}_prediction.png"  # Unique filename for prediction graph
+        filename = f"prediction.png"  # Unique filename for prediction graph
         filepath = os.path.join(app.config['IMAGE_FOLDER'], filename)
 
         plt.figure(figsize=(10, 6))
@@ -65,8 +68,9 @@ if not data.empty:
         plt.grid(True)
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-        plt.savefig(filepath, format='png')
+        plt.savefig(filename, format='png')
         plt.close()
+        shutil.move(filename, filepath)
         return filename  # Return the filename
 
     historical_graph_filename = create_historical_graph(data.index, data['Close'], data['MA30'])
@@ -79,10 +83,10 @@ def index():
     historical_graph_url = url_for('static', filename=f"images/{historical_graph_filename}") if historical_graph_filename else None
     return render_template('index.html', raw_data=data.to_html(classes='data'), historical_graph_url=historical_graph_url, predicted_graph_url=None, current_year=current_year, predictions=None, model_error=None)
 
-@app.route('/predict', methods=['POST'])
+@app.route('/predict', methods=['POST', 'GET'])
 def predict():
     global historical_graph_filename  # Access the global variable
-    num_days = int(request.form.get('days', 30))  # Get days from form
+    num_days = int(request.form.get('days', request.args.get('days', 30)))  # Get days from form
     predictions_data = None
     predicted_graph_filename = None
 
@@ -104,4 +108,4 @@ def predict():
     return render_template('index.html', raw_data=data.to_html(classes='data'), historical_graph_url=historical_graph_url, predicted_graph_url=predicted_graph_url, current_year=current_year, predictions=predictions_data, model_error=None)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
